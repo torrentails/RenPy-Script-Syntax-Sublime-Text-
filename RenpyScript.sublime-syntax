@@ -1,0 +1,443 @@
+%YAML 1.2
+---
+file_extensions:
+  - rps
+scope: source.renpyscript
+contexts:
+  main:
+    - include: comments
+    - include: commands
+    # ISSUE: For some reason this has to be at the end of the commands context
+    # - include: unknown
+    - include: python_line
+    - include: lines
+
+  comments:
+    # Comments begin with a '#' and finish at the end of the line
+    - match: '^\s*(#)(?!#)'
+      scope: punctuation.definition.comment.noimport.renpyscript
+      push: line_comment
+    - match: '^\s*(##)'
+      scope: punctuation.definition.comment.import.renpyscript
+      push: line_comment
+
+  line_comment:
+    - meta_scope: comment.line.renpyscript
+    - match: \n
+      pop: true
+
+  commands:
+    - include: block-commands
+    - match: ^\s*(?=:)(?=line|character|:|sc|s|w|p|pm|ps|pa|v|q|stop|c|j|r|choice|if|elif|else|nvl|clear|import|file|log|break|config)
+      set:
+        # Line replacements
+        - match: (:line\b)(?=\s)
+          captures:
+            1: variable.language.command.replacement.line.renpyscript
+          set: evaluation
+          with_prototype:
+            - match: $
+              pop: true
+        # Prefix replacements
+        - match: (:character\b)(?=\s)
+          captures:
+            1: variable.language.command.replacement.character.renpyscript
+          set: evaluation
+          with_prototype:
+            - match: $
+              pop: true
+        # Configuration
+        - match: (:config\b)(?=\s)
+          captures:
+            1: variable.language.command.configuration.renpyscript
+          set: configuration
+          with_prototype:
+            - match: $
+              pop: true
+        # scene, show and with
+        - match: (:sc\b)(?=\s)|(:s\b)(?=\s)|(:w\b)(?=\s)
+          captures:
+            1: variable.language.command.display.scene.renpyscript
+            2: variable.language.command.display.show.renpyscript
+            3: variable.language.command.display.with.renpyscript
+          set:
+            - meta_scope: string.unquoted.variable.display.renpyscript
+            - match: (:\n)|(\n)
+              captures:
+                1: invalid.illegal.block.unexpected.renpyscript
+              pop: true
+        # Play
+        - match: (:p\b)\s+(\S*)
+          captures:
+            1: variable.language.command.play.renpyscript
+            2: meta.audio.channel.renpyscript
+          set: string.unquoted.
+        # Play (syntactic sugar)
+        - match: (:pm\b)(?=\s)|(:ps\b)(?=\s)|(:pa\b)(?=\s)
+          captures:
+            1: variable.language.command.play.music.renpyscript
+            2: variable.language.command.play.sound.renpyscript
+            3: variable.language.command.play.audio.renpyscript
+          set: string.unquoted.
+        # Voice
+        - match: (:v\b)(?=\s)
+          captures:
+            1: variable.language.command.voice.renpyscript
+          set: string.unquoted.
+        # Queue
+        - match: (:q\b)\s+(\S*)
+          captures:
+            1: variable.language.command.queue.renpyscript
+            2: meta.audio.channel.renpyscript
+          set: string.unquoted.
+        # Stop
+        - match: (:stop\b)\s+(\S*)
+          captures:
+            1: variable.language.command.stop.renpyscript
+            2: meta.audio.channel.renpyscript
+        # call and jump
+        - match: (:c\b)|(:j\b)(?=\s)
+          captures:
+            1: variable.language.control.flow.call.renpyscript
+            2: variable.language.control.flow.jump.renpyscript
+          set:
+            - match: (\.[a-zA-Z_][a-zA-Z_0-9]*)
+              scope: entity.name.class.label.child.renpyscript
+            - match: ([a-zA-Z_][a-zA-Z_0-9]*)(\.[a-zA-Z_][a-zA-Z_0-9]*)?
+              captures:
+                1: entity.name.class.label.parent.renpyscript
+                2: entity.name.class.label.child.renpyscript
+            - match: (:\n)|(\n)
+              captures:
+                1: invalid.illegal.block.unexpected.renpyscript
+              pop: true
+        # return, without value
+        - match: (:r)(:\n)|(\n)
+          captures:
+            1: variable.language.control.flow.return.renpyscript
+            2: invalid.illegal.block.unexpected.renpyscript
+          pop: true
+        # return, with value
+        - match: (:r)(?=\s)
+          captures:
+            1: variable.language.control.flow.return.renpyscript
+          push:
+            - match: (?=.*)
+              set:
+                - meta_scope: string.unquoted.variable.return.value.renpyscript
+                - match: (:\n)|(\n)
+                  captures:
+                    1: invalid.illegal.block.unexpected.renpyscript
+                  pop: true
+            - match: (:\n)|(\n)
+              captures:
+                1: invalid.illegal.block.unexpected.renpyscript
+              pop: true
+        # if, elif
+        - match: (:if\b)|(:elif\b)(?=\s)
+          captures:
+            1: variable.language.control.flow.if.renpyscript
+            2: variable.language.control.flow.elif.renpyscript
+          set: Packages/Python/Python.sublime-syntax
+          with_prototype:
+            - match: (?=:)
+              pop: true
+        # NVL, choice and else
+        - match: (:nvl:)|(:choice:)|(:else:)
+          captures:
+            1: variable.language.command.nvl.renpyscript
+            2: variable.language.command.choice.renpyscript
+            3: variable.language.control.flow.else.renpyscript
+          set:
+            - match: \n
+              pop: true
+        # break and NVL clear
+        - match: (:clear\b)|(:break\b)
+          captures:
+            1: variable.language.command.clear.renpyscript
+            2: variable.language.command.break.renpyscript
+          set:
+            - match: (:\n)|(\n)
+              captures:
+                1: invalid.illegal.block.unexpected.renpyscript
+              pop: true
+        # import and new file
+        - match: (:import\b)|(:file\b)
+          captures:
+            1: variable.language.command.import.renpyscript
+            2: variable.language.command.file.renpyscript
+          set:
+            - meta_scope: string.unquoted.filepath.renpyscript
+            - match: (:\n)|(\n)
+              captures:
+                1: invalid.illegal.block.unexpected.renpyscript
+              pop: true
+        # log
+        - match: (:log\b)
+          scope: variable.language.command.log.renpyscript
+          set: log
+        # Labels
+        - match: (::)(?!\n)
+          scope: variable.language.command.label.renpyscript
+          set:
+            - meta_scope: meta.label.renpyscript
+            - match: (\.[a-zA-Z_][a-zA-Z_0-9]*)
+              scope: entity.name.class.label.child.renpyscript
+            - match: ([a-zA-Z_][a-zA-Z_0-9]*)(\.[a-zA-Z_][a-zA-Z_0-9]*)?
+              captures:
+                1: entity.name.class.label.parent.renpyscript
+                2: entity.name.class.label.child.renpyscript
+            - match: (:)(?=\n)
+              scope: punctuation.definition.variable.start-block.renpyscript
+            - match: \n
+              pop: true
+        - include: unknown
+
+  block-commands:
+    - match: ^(\s*)(:line:)\n
+      captures:
+        2: variable.language.command.replacement.line.block.renpyscript
+      push: evaluation-block
+    - match: ^(\s*)(:character:)\n
+      captures:
+        2: variable.language.command.replacement.character.block.renpyscript
+      push: evaluation-block
+    - match: ^(\s*)(:config:)\n
+      captures:
+        2: variable.language.command.configuration.block.renpyscript
+      push: configuration-block
+    - match: ^(\s*)(:raw:)\n
+      captures:
+        2: variable.language.command.raw.block.renpyscript
+      set: raw-block
+
+  unknown:
+    # Unknown command
+    - match: (\s*)(:)(?=.+:\n)
+      captures:
+        2: variable.language.command.renpyscript
+      set: unknown-block
+    - match: (\s*)(:)(?=.*)(?!:\n)
+      captures:
+        2: variable.language.command.renpyscript
+      set: Packages/Python/Python.sublime-syntax
+      with_prototype:
+        - match: (?=$)
+          pop: true
+
+  python_line:
+    - match: ^\s*(\$)\s+(?=.)
+      scope: keyword.control.flow.renpyscript
+      set: Packages/Python/Python.sublime-syntax
+      with_prototype:
+        - match: (?=$)
+          pop: true
+
+  lines:
+    - match: ^\s*(\S*[;:])\s*(?=.+)
+      scope: support.constant.character.renpyscript
+      set:
+        - meta_scope: meta.line.dialoge.renpyscript
+        - match: \\\\|\\"|\\'|\\\s|\\n
+          scope: constant.character.escape.renpyscript
+        - match: (?<!{)({)(?=[^{])
+          scope: constant.other.tag.start.renpyscript
+          push: text_tag
+        - match: (?<!\[)(\[)(?=[^\[])
+          scope: constant.other.interpolation.start.renpyscript
+          push: interpolation
+        - match: (:)?($)
+          captures:
+            1: punctuation.section.block.start.renpyscript
+          pop: true
+    - match: (?=.)
+      set:
+        - meta_scope: meta.line.narration.renpyscript
+        - match: \\\\|\\"|\\'|\\\s|\\n
+          scope: constant.character.escape.renpyscript
+        - match: (?<!{)({)(?=[^{])
+          scope: constant.other.tag.start.renpyscript
+          push: text_tag
+        - match: (?<!\[)(\[)(?=[^\[])
+          scope: constant.other.interpolation.start.renpyscript
+          push: interpolation
+        - match: (:)?($)
+          captures:
+            1: punctuation.section.block.start.renpyscript
+          pop: true
+
+  text_tag:
+    - meta_scope: constant.other.tag.content.renpyscript
+    - match: '='
+      scope: keyword.operator.assignment.renpyscript
+    - match: (})|($)
+      captures:
+        1: constant.other.tag.end.renpyscript
+      pop: true
+
+  interpolation:
+    - meta_scope: string.unquoted.interpolation.content.renpyscript
+    - match: (])|($)
+      captures:
+        1: constant.other.interpolation.end.renpyscript
+      pop: true
+
+  evaluation:
+    - meta_scope: meta.replacement.renpyscript
+    - match: (?<!\\)(\{|\}|\*|\+|\?)
+      scope: constant.other.placeholder.match.renpyscript
+    - match: (=)
+      scope: keyword.operator.assignment.renpyscript
+      push:
+        - meta_scope: string.unquoted.replacement.renpyscript
+        - match: (?<!\\)(\{|\}|\\n)
+          scope: constant.other.placeholder.replacement.renpyscript
+        - match: $
+          pop: true
+    # - match: $
+    #   pop: true
+
+  configuration:
+    - match: \b(create_parent_files|create_flow_control_file|flow_control_ignore|copy_comments|copy_special_comments|nvl_character|nvl_prefix|nvl_suffix|output_path|auto_return|abort_on_error)\b
+      scope: variable.parameter.configuration.renpyscript
+      push:
+        - match: (=)
+          scope: keyword.operator.assignment.renpyscript
+          set:
+            - meta_scope: string.unquoted.configuration.renpyscript
+            - match: (?<!\\)(\*|\+|\?)
+              scope: constant.language.renpyscript
+            - match: (\[)|(\])
+              captures:
+                1: punctuation.section.list.start.renpyscript
+                2: punctuation.section.list.end.renpyscript
+              # push:
+              #   - match: '([uU]?)(")'
+              #     captures:
+              #       1: storage.type.string.unquoted.renpyscript
+              #       2: punctuation.definition.string.unquoted.begin.renpyscript
+              #     push:
+              #       - meta_scope: string.unquoted.quoted.double.block.renpyscript
+              #       - match: '(")|(\n)'
+              #         captures:
+              #           1: punctuation.definition.string.unquoted.end.renpyscript
+              #           2: invalid.illegal.unclosed-string.unquoted.renpyscript
+              #         pop: true
+              #       - match: (?<!\\)(\*|\+|\?)
+              #         scope: constant.language.renpyscript
+              #   - match: '([uU]?)('')'
+              #     captures:
+              #       1: storage.type.string.unquoted.renpyscript
+              #       2: punctuation.definition.string.unquoted.begin.renpyscript
+              #     push:
+              #       - meta_scope: string.unquoted.quoted.single.block.renpyscript
+              #       - match: '('')|(\n)'
+              #         captures:
+              #           1: punctuation.definition.string.unquoted.end.renpyscript
+              #           2: invalid.illegal.unclosed-string.unquoted.renpyscript
+              #         pop: true
+              #       - match: (?<!\\)(\*|\+|\?)
+              #         scope: constant.language.renpyscript
+            - include: constants
+            - include: numbers
+            - match: $
+              pop: true
+
+  log:
+    - match: \b((0|VERBOSE)|(1|DEBUG)|(2|INFO)|(3|WARN|WARNING)|(4|ERROR))\b
+      captures:
+        2: constant.language.log.verbose.renpyscript
+        3: constant.language.log.debug.renpyscript
+        4: constant.language.log.info.renpyscript
+        5: constant.language.log.warning.renpyscript
+        6: constant.language.log.error.renpyscript
+      set:
+        - meta_scope: string.unquoted.log.message.renpyscript
+        - match: \n
+          pop: true
+
+  configuration-block:
+    - meta_scope: meta.block.configuration.renpyscript
+    - include: comments
+    - include: configuration
+    - match: ^(?!(\1\s+|\s*#.*$))
+      pop: true
+
+  evaluation-block:
+    - meta_scope: meta.block.replacement.renpyscript
+    - include: comments
+    - include: evaluation
+    - match: ^(?!(\1\s+|\s*#.*$))
+      pop: true
+
+  raw-block:
+    - meta_scope: meta.block.raw.renpyscript
+    - match: ^(?!(\1\s+|\s*#.*$))
+      pop: true
+    - match: (?=.*)
+      push: Packages/Python/Python.sublime-syntax
+      with_prototype:
+        - match: ^(?!(\1\s+|\s*#.*$))
+          pop: true
+
+  unknown-block:
+    - meta_scope: meta.block.unknown.renpyscript
+    - match: ^(?!(\1\s+|\s*#.*$))
+      pop: true
+    - match: (?=.*)
+      push: Packages/Python/Python.sublime-syntax
+      with_prototype:
+        - match: ^(?!(\1\s+|\s*#.*$))
+          pop: true
+
+  string.unquoted.:
+    - match: (')
+      scope: punctuation.definition.string.begin.renpyscript
+      push:
+        - meta_scope: string.unquoted.quoted.single.filename.renpyscript
+        - match: "((?<!\\\\)')|(\n)"
+          captures:
+            1: punctuation.definition.string.end.renpyscript
+            2: invalid.illegal.unclosed-string.renpyscript
+          pop: true
+    - match: (")
+      scope: punctuation.definition.string.begin.renpyscript
+      push:
+        - meta_scope: string.unquoted.quoted.double.filename.renpyscript
+        - match: '((?<!\\\\)")|(\n)'
+          captures:
+            1: punctuation.definition.string.end.renpyscript
+            2: invalid.illegal.unclosed-string.renpyscript
+          pop: true
+    - match: '$'
+      pop: true
+
+  constants:
+    - match: \b(None|True|False|Ellipsis|NotImplemented)\b
+      scope: constant.language.renpyscript
+
+  numbers:
+    - match: \b(?i:(0x\h*)L)
+      scope: constant.numeric.integer.long.hexadecimal.renpyscript
+    - match: \b(?i:(0x\h*))
+      scope: constant.numeric.integer.hexadecimal.renpyscript
+    - match: '\b(?i:0(o|[0-7])[0-7]*L)'
+      scope: constant.numeric.integer.long.octal.renpyscript
+    - match: '\b(?i:0(o|[0-7])[0-7]*)'
+      scope: constant.numeric.integer.octal.renpyscript
+    - match: \b(?i:0b[01]*L)
+      scope: constant.numeric.integer.long.binary.renpyscript
+    - match: \b(?i:0b[01]*)
+      scope: constant.numeric.integer.binary.renpyscript
+    - match: '\b(?i:(((\d+(\.(?=[^a-zA-Z_])\d*)?|\.\d+)(e[\-\+]?\d+)?))J)'
+      scope: constant.numeric.complex.renpyscript
+    - match: '\b(?i:(\d+\.\d*(e[\-\+]?\d+)?))(?=[^a-zA-Z_])'
+      scope: constant.numeric.float.renpyscript
+    - match: '(?i:(\.\d+(e[\-\+]?\d+)?))'
+      scope: constant.numeric.float.renpyscript
+    - match: '\b(?i:(\d+e[\-\+]?\d+))'
+      scope: constant.numeric.float.renpyscript
+    - match: '\b(?i:([1-9]+[0-9]*|0)L)'
+      scope: constant.numeric.integer.long.decimal.renpyscript
+    - match: '\b([1-9]+[0-9]*|0)'
+      scope: constant.numeric.integer.decimal.renpyscript

@@ -1,0 +1,210 @@
+~ SYNTAX TEST "Packages/User/RenpyScript.sublime-syntax"
+# Known Commands
+~ <- punctuation.definition.comment.noimport.renpyscript
+~ ^ comment.line.renpyscript
+
+::parent.child
+~ <- support.function.command.label.renpyscript
+ ~ <- support.function.command.label.renpyscript
+~ ^ entity.name.class.label.parent.renpyscript
+~       ^^ entity.name.class.label.child.renpyscript
+
+::parent:
+~ ^ entity.name.class.label.parent.renpyscript
+~       ^ punctuation.section.block.renpyscript
+
+::.child:
+~ ^^ entity.name.class.label.child.renpyscript
+~       ^ punctuation.section.block.renpyscript
+
+:l find{*} = replace{}
+~ <- support.function.command.replacement.line.renpyscript
+~  ^ meta.replacement.renpyscript
+~      ^^^ constant.character.match.renpyscript
+~          ^ keyword.operator.assignment.renpyscript
+~            ^ string.replacement.renpyscript
+~                   ^^ constant.character.replacement.renpyscript
+
+:l:
+~ <- support.function.command.replacement.line.block.renpyscript
+~ ^ support.function.command.replacement.line.block.renpyscript
+
+:l:
+    find{+*?}\{ = replace{}
+~   ^ meta.replacement.block.renpyscript
+~       ^^^^^ constant.character.match.renpyscript
+~            ^^ meta.replacement.block.renpyscript
+~               ^ keyword.operator.assignment.renpyscript
+~                 ^ string.replacement.renpyscript
+~                        ^^ constant.character.replacement.renpyscript
+
+:p find = replace
+~ <- support.function.command.replacement.prefix.renpyscript
+~  ^ meta.replacement.renpyscript
+~       ^ keyword.operator.assignment.renpyscript
+~         ^ string.replacement.renpyscript
+
+:p:
+~ <- support.function.command.replacement.prefix.block.renpyscript
+~ ^ support.function.command.replacement.prefix.block.renpyscript
+
+:sc scene
+~ <- support.function.command.display.scene.renpyscript
+~   ^ string.variable.display.renpyscript
+
+:s image
+~ <- support.function.command.display.show.renpyscript
+~   ^ string.variable.display.renpyscript
+
+:w transition
+~ <- support.function.command.display.with.renpyscript
+~   ^ string.variable.display.renpyscript
+
+:c parent.child
+~ <- support.function.control.flow.call.renpyscript
+~  ^ entity.name.class.label.parent.renpyscript
+~        ^^ entity.name.class.label.child.renpyscript
+
+:j .label
+~ <- support.function.control.flow.jump.renpyscript
+~  ^^ entity.name.class.label.child.renpyscript
+
+:r
+~ <- support.function.control.flow.return.renpyscript
+
+:r value
+~ <- support.function.control.flow.return.renpyscript
+~  ^ string.variable.return.value.renpyscript
+
+:nvl:
+~ <- support.function.command.nvl.renpyscript
+
+:m:
+~ <- support.function.command.menu.renpyscript
+
+:if condition:
+~ <- support.function.control.flow.if.renpyscript
+~   ^ source.python
+~            ^ punctuation.section.block.start.renpyscript
+
+:elif condition:
+~ <- support.function.control.flow.elif.renpyscript
+~     ^ source.python
+~              ^ punctuation.section.block.start.renpyscript
+
+:else:
+~ <- support.function.control.flow.else.renpyscript
+
+:clear
+~ <- support.function.command.clear.renpyscript
+
+:break
+~ <- support.function.command.break.renpyscript
+
+:import file_name
+~ <- support.function.command.import.renpyscript
+~       ^ string.filepath.renpyscript
+
+:file file_name
+~ <- support.function.command.file.renpyscript
+~       ^ string.filepath.renpyscript
+
+:log INFO message
+~ <- support.function.command.log.renpyscript
+~    ^ constant.language.log.info.renpyscript
+~         ^ string.log.message.renpyscript
+
+:config output_path = ./
+~ <- support.function.command.configuration.renpyscript
+~                   ^ keyword.operator.assignment.renpyscript
+~                     ^^ string.configuration.renpyscript
+
+:config:
+~ <- support.function.command.configuration.block.renpyscript
+
+:config:
+    flow_control_ignore = ["*_choice*", "*_ignore*"]
+~ <- meta.block.configuration.renpyscript
+~   ^ variable.parameter.configuration.renpyscript
+~                       ^ keyword.operator.assignment.renpyscript
+~                         ^ punctuation.section.list.start.renpyscript
+~                          ^ string.configuration.renpyscript
+~                           ^ constant.language.renpyscript
+~                                                  ^ punctuation.section.list.end.renpyscript
+
+## Test lines
+~ <- punctuation.definition.comment.import.renpyscript
+~  ^ comment.line.renpyscript
+
+A normal line
+~ <- meta.line.narration.renpyscript
+
+A line starting a block:
+~                      ^ punctuation.section.block.start.renpyscript
+
+ALEX: Hello
+~ <- keyword.prefix.character.renpyscript
+~     ^ meta.line.dialoge.renpyscript
+
+beth; Goodbye:
+~ <- keyword.prefix.character.renpyscript
+~            ^ punctuation.section.block.start.renpyscript
+
+# Test unknown
+
+:unknown
+~ <- keyword.operator.command.renpyscript
+~ ^ source.python
+
+:unknown.block:
+~ <- keyword.operator.command.renpyscript
+~        ^ source.python
+
+:unknown.block:
+    with open('file')
+~ ^ meta.block.unknown.renpyscript
+~   ^ source.python
+
+# Test raw
+:raw:
+~ <- support.function.command.raw.block.renpyscript
+
+:raw:
+    for k in func()[:]
+~ ^ meta.block.raw.renpyscript
+~   ^ source.python
+
+# Test errors
+:sc scene:
+~        ^ invalid.illegal.block.unexpected.renpyscript
+
+:s image:
+~       ^ invalid.illegal.block.unexpected.renpyscript
+
+:w transition:
+~            ^ invalid.illegal.block.unexpected.renpyscript
+
+:c label:
+~       ^ invalid.illegal.block.unexpected.renpyscript
+
+:j label:
+~       ^ invalid.illegal.block.unexpected.renpyscript
+
+:r:
+~ ^ invalid.illegal.block.unexpected.renpyscript
+
+:r value:
+~       ^ invalid.illegal.block.unexpected.renpyscript
+
+:clear:
+~     ^ invalid.illegal.block.unexpected.renpyscript
+
+:break:
+~     ^ invalid.illegal.block.unexpected.renpyscript
+
+:import some/file:
+~                ^ invalid.illegal.block.unexpected.renpyscript
+
+:file ./file.new:
+~               ^ invalid.illegal.block.unexpected.renpyscript
+
